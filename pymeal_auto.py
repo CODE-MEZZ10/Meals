@@ -1,46 +1,44 @@
 import http.client
 import json
 from datetime import datetime
-from datetime import date
 import tkinter as tk
-from tkinter import Text, Scrollbar, Entry
+from tkinter import Text, Scrollbar
 
-today = date.today()
-
-def get_meal_info(school_code, middle_school_code, selected_date):
+def getmeal(sc, msc):
     url = "/hub/mealServiceDietInfo"
+
+    current_date = datetime.now().strftime("%Y%m%d")
 
     headers = {
         "Content-type": "application/json",
     }
 
     conn = http.client.HTTPSConnection("open.neis.go.kr")
-    payload = {
-        "KEY": "c3bfcbc6be3548ea975dde21061bee96",
+    payload_today = {
+        "KEY": "700899c1168e4cffa03e89a7aa650f5d",
         "Type": "json",
         "pIndex": 1,
         "pSize": 1,
-        "ATPT_OFCDC_SC_CODE": middle_school_code,
-        "SD_SCHUL_CODE": school_code,
-        "MLSV_YMD": selected_date,
+        "ATPT_OFCDC_SC_CODE": msc,
+        "SD_SCHUL_CODE": sc,
+        "MLSV_YMD": current_date,
     }
 
-    conn.request("GET", url + "?" + "&".join([f"{key}={value}" for key, value in payload.items()]), headers=headers)
-    response = conn.getresponse()
-    data = response.read()
+    conn.request("GET", url + "?" + "&".join([f"{key}={value}" for key, value in payload_today.items()]), headers=headers)
+    response_today = conn.getresponse()
+    data_today = response_today.read()
 
     try:
-        meal_data = json.loads(data)["mealServiceDietInfo"][1]["row"][0]["DDISH_NM"]
-        cleaned_info = "\n".join(''.join(c for c in line if c not in '()0123456789.').strip() for line in meal_data.split("<br/>"))
+        meal_data_today = json.loads(data_today)["mealServiceDietInfo"][1]["row"][0]["DDISH_NM"]
+        cleaned_info_today = "\n".join(''.join(c for c in line if c not in '()0123456789.').strip() for line in meal_data_today.split("<br/>"))
     except KeyError:
-        cleaned_info = "급식 정보를 불러올 수 없습니다."
+        cleaned_info_today = "Can't acess to info"
 
     conn.close()
-    return cleaned_info
+    return cleaned_info_today
 
 def show_meal_info():
-    selected_date = today
-    meal_info = get_meal_info("9022116", "S10", selected_date)
+    meal_info = getmeal("9022116", "S10")
     result_text.delete(1.0, tk.END)
     result_text.insert(tk.END, meal_info)
 
